@@ -9,7 +9,7 @@ export const signup = async (request, response) => {
       return response.status(400).json({ message: "All fields are required" });
     const userExist = await selectUserByEmail(email);
     if (userExist)
-      return response.status(400).json({ message: "Email already used" });
+      return response.status(409).json({ message: "Email already used" });
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
     const user = await insertUser(name, email, hashPassword, role);
