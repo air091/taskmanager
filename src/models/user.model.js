@@ -30,6 +30,16 @@ export const selectUserByEmail = async (email) => {
   }
 };
 
+export const selectUsersByRole = async (role) => {
+  const selectQuery = `SELECT id, name, email, role FROM users WHERE role = $1`;
+  try {
+    const results = await pool.query(selectQuery, [role]);
+    return results.rows;
+  } catch (err) {
+    console.error(`Select users by role failed ${err}`);
+  }
+};
+
 export const insertUser = async (name, email, password, role) => {
   const insertQuery = `INSERT INTO users (name, email, password, role)
                       VALUES ($1, $2, $3, $4)

@@ -1,9 +1,52 @@
 import pool from "../config/database.js";
 
-export const selectSubtasksByUser = async (userId) => {
-  const selectQuery = `SELECT * FROM collaborates WHERE user_id = $1`;
+export const checkUserIsInTask = async (subtaskId, userId, creator) => {
+  const checkQuery = `SELECT EXISTS (
+                    SELECT 1
+                    FROM subtask
+                    JOIN collaborates ON subtask.id = collaborates.subtask_id
+                    WHERE subtask.id = $1 AND (collaborates.user_id = $2 OR subtask.created_by = $3)
+                    )`;
+  try {
+    const results = await pool.query(checkQuery, [subtaskId, userId, creator]);
+    return results.rows[0].exists;
+  } catch (err) {
+    console.error(`Check user is in task failed ${err}`);
+  }
+};
+
+export const selectTasksByCollab = async (userId) => {
+  const selectQuery = `SELECT task.id AS taskId,
+                      task.title AS taskTitle,
+                      task.status,
+                      collaborates.user_id AS collabs,
+                      task.created_at AS createdAt,
+                      task.updated_at AS updatedAt
+                      FROM task
+                      INNER JOIN subtask ON task.id = subtask.task_id
+                      INNER JOIN collaborates ON subtask.id = collaborates.subtask_id
+                      WHERE user_id = $1`;
   try {
     const results = await pool.query(selectQuery, [userId]);
+    return results.rows;
+  } catch (err) {
+    console.error(`Select subtasks by user failed ${err}`);
+  }
+};
+
+export const selectSubtasksInTask = async (taskId) => {
+  const selectQuery = `SELECT task.id AS task_id,
+                      subtask.title AS subtask_title,
+                      subtask.status,
+                      collaborates.user_id AS collabs,
+                      subtask.created_at,
+                      subtask.updated_at
+                      FROM task
+                      INNER JOIN subtask ON task.id = subtask.task_id
+                      INNER JOIN collaborates ON subtask.id = collaborates.subtask_id
+                      WHERE task.id = $1`;
+  try {
+    const results = await pool.query(selectQuery, [taskId]);
     return results.rows;
   } catch (err) {
     console.error(`Select subtasks by user failed ${err}`);

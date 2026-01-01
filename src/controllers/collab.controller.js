@@ -1,14 +1,41 @@
-import { insertCollabToSubtask } from "../models/collab.model.js";
+import {
+  checkUserIsInTask,
+  insertCollabToSubtask,
+  selectSubtasksInTask,
+  selectTasksByCollab,
+} from "../models/collab.model.js";
 import { selectSubtaskByCreator } from "../models/subTask.model.js";
+import { selectTaskByCreated } from "../models/task.model.js";
 
-// export const getSubtasksByUser = async (request, response) => {
-//   try {
-//     const
-//   } catch (err) {
-//     console.error(`Get subtasks by user failed ${err}`);
-//     return response.status(500).json({ message: err.message });
-//   }
-// };
+export const getTasksByCollab = async (request, response) => {
+  try {
+    const tasks = await selectTasksByCollab(request.user.id);
+    if (!tasks) return response.status(404).json({ message: "No tasks yet" });
+    return response.status(200).json({ tasks });
+  } catch (err) {
+    console.error(`Get tasks by user failed ${err}`);
+    return response.status(500).json({ message: err.message });
+  }
+};
+
+export const getSubtasksInTaskByUsers = async (request, response) => {
+  try {
+    const { taskId } = request.params;
+    let checkUser = await selectTaskByCreated(taskId, request.user.id);
+    if (!checkUser) {
+      // if user not the owner of task
+      checkUser = await checkUserIsInTask(taskId, request.user.id);
+      // if user not in task collab
+      if (!checkUser)
+        return response.status(401).json({ message: "You are not in task" });
+    }
+    const subtasksByUser = await selectSubtasksInTask(taskId);
+    return response.status(200).json({ userSubtasks: subtasksByUser });
+  } catch (err) {
+    console.error(`Get subtasks in task by users failed ${err}`);
+    return response.status(500).json({ message: err.message });
+  }
+};
 
 export const postCollabToSubtask = async (request, response) => {
   try {

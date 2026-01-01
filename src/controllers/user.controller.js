@@ -2,6 +2,7 @@ import {
   deleteUserRow,
   selectAllUsers,
   selectUserByEmail,
+  selectUsersByRole,
   updateUser,
 } from "../models/user.model.js";
 import bcrypt from "bcrypt";
@@ -11,6 +12,30 @@ export const getAllUsers = async (request, response) => {
     const users = await selectAllUsers();
     if (!users.length)
       return response.status(404).json({ message: "No users yet." });
+    return response.status(200).json({ users });
+  } catch (err) {
+    console.error(`Get all users failed ${err}`);
+    return response.status(500).json({ message: err.message });
+  }
+};
+
+export const getUsersByRole = async (request, response) => {
+  try {
+    const { role } = request.query;
+    if (!role) return response.status(400).json({ message: "No role found" });
+    const upperCaseRole = role.toUpperCase();
+
+    if (!["ADMIN", "USER"].includes(upperCaseRole))
+      return response.status(400).json({ message: "Invalid role" });
+
+    if (upperCaseRole === "ADMIN" && request.user.role !== "ADMIN")
+      return response.status(403).json({ message: "Forbidden! Not admin" });
+
+    const users = await selectUsersByRole(upperCaseRole);
+    if (!users.length)
+      return response
+        .status(404)
+        .json({ message: `No users with "${upperCaseRole}" role yet` });
     return response.status(200).json({ users });
   } catch (err) {
     console.error(`Get all users failed ${err}`);
